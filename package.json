@@ -1,5 +1,5 @@
 {
-  "name": "masters-fantasy-2025",
+  "name": "masters-fantasy-2026",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -11,7 +11,7 @@
     "next": "14.2.3",
     "react": "^18",
     "react-dom": "^18",
-    "@vercel/kv": "^2.0.0"
+    "@upstash/redis": "^1.34.0"
   },
   "devDependencies": {
     "@types/node": "^20",
