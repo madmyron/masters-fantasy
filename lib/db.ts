@@ -1,52 +1,54 @@
 import type { Entry, Results } from './golf';
 
-// In-memory fallback for local dev when KV env vars aren't set
+// In-memory fallback for local dev when env vars aren't set
 const memStore: { entries: Entry[]; results: Results } = {
   entries: [],
   results: {},
 };
 
-function useKV(): boolean {
+function useRedis(): boolean {
   return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
 }
 
-async function getKV() {
-  const { kv } = await import('@vercel/kv');
-  return kv;
+async function getRedis() {
+  const { Redis } = await import('@upstash/redis');
+  return new Redis({
+    url: process.env.KV_REST_API_URL!,
+    token: process.env.KV_REST_API_TOKEN!,
+  });
 }
 
 export async function getEntries(): Promise<Entry[]> {
-  if (!useKV()) return memStore.entries;
-  const kv = await getKV();
-  const entries = await kv.get<Entry[]>('masters2025:entries');
+  if (!useRedis()) return memStore.entries;
+  const redis = await getRedis();
+  const entries = await redis.get<Entry[]>('masters2026:entries');
   return entries ?? [];
 }
 
 export async function addEntry(entry: Entry): Promise<void> {
-  if (!useKV()) {
+  if (!useRedis()) {
     memStore.entries.push(entry);
     return;
   }
-  const kv = await getKV();
+  const redis = await getRedis();
   const entries = await getEntries();
-  // Prevent duplicate names — replace if same name re-submits
   const filtered = entries.filter(e => e.playerName.toLowerCase() !== entry.playerName.toLowerCase());
   filtered.push(entry);
-  await kv.set('masters2025:entries', filtered);
+  await redis.set('masters2026:entries', filtered);
 }
 
 export async function getResults(): Promise<Results> {
-  if (!useKV()) return memStore.results;
-  const kv = await getKV();
-  const results = await kv.get<Results>('masters2025:results');
+  if (!useRedis()) return memStore.results;
+  const redis = await getRedis();
+  const results = await redis.get<Results>('masters2026:results');
   return results ?? {};
 }
 
 export async function setResults(results: Results): Promise<void> {
-  if (!useKV()) {
+  if (!useRedis()) {
     memStore.results = results;
     return;
   }
-  const kv = await getKV();
-  await kv.set('masters2025:results', results);
+  const redis = await getRedis();
+  await redis.set('masters2026:results', results);
 }
